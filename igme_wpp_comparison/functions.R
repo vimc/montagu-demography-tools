@@ -9,16 +9,16 @@ add_expand <- function(data, country) {
   country_data$value[match(1950:2100, country_data$year)]
 }
 
-plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab) {
+plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2100) {
   png(file = filename, width=800, height=600)
   
-  plot(x = 1950:2100, y = df$UNWPP, type="l", col="black", ylim=c(0,max_y), xaxt="n",
+  plot(x = year1:year2, y = df$UNWPP, type="l", col="black", ylim=c(0,max_y), xaxt="n",
        xlab = "Year", ylab = ylab, main=toptitle)
   
-  axis(side = 1,  at = seq(1950, 2100, by=10))
-  lines(x = years, y = df$"IGME lower", type = "l", col = "blue")
-  lines(x = years, y = df$"IGME median", type = "l", col = "green")
-  lines(x = years, y = df$"IGME upper", type = "l", col = "red")
+  axis(side = 1,  at = seq(year1, year2, by=10))
+  lines(x = year1:year2, y = df$"IGME lower", type = "l", col = "blue")
+  lines(x = year1:year2, y = df$"IGME median", type = "l", col = "green")
+  lines(x = year1:year2, y = df$"IGME upper", type = "l", col = "red")
   grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
   
   legend('topright',legend = c("UNWPP","IGME lower","IGME median","IGME upper"), 
@@ -27,16 +27,16 @@ plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab) {
   dev.off()
 }
 
-plot_nmr_frac <- function(filename, max_y, df, toptitle, ylab) {
+plot_nmr_frac <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2020) {
   png(file = filename, width=800, height=600)
   
-  plot(x = 1950:2020, y = df$UNWPP, type="l", col="black", ylim=c(0,max_y), xaxt="n",
+  plot(x = year1:year2, y = df$UNWPP, type="l", col="black", ylim=c(0,max_y), xaxt="n",
        xlab = "Year", ylab = ylab, main=toptitle)
   
-  axis(side = 1,  at = seq(1950, 2020, by=10))
-  lines(x = 1950:2020, y = df$"IGME lower", type = "l", col = "blue")
-  lines(x = 1950:2020, y = df$"IGME median", type = "l", col = "green")
-  lines(x = 1950:2020, y = df$"IGME upper", type = "l", col = "red")
+  axis(side = 1,  at = seq(year1, year2, by=10))
+  lines(x = year1:year2, y = df$"IGME lower", type = "l", col = "blue")
+  lines(x = year1:year2, y = df$"IGME median", type = "l", col = "green")
+  lines(x = year1:year2, y = df$"IGME upper", type = "l", col = "red")
   grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
   
   legend('bottomright',legend = c("IGME NMR median / UNWPP IMR","IGME NMR lower / IGME IMR lower","IGME NMR median / IGME IMR median", "IGME NMR upper / IGME IMR upper"), 
