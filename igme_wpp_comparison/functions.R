@@ -40,7 +40,7 @@ plot_nmr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2020
   grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
   points(x = est$date, y=est$estimates, col="purple")
   
-  legend('bottomright',legend = c("IGME NMR lower","IGME NMR median", "IGME NMR upper"),
+  legend('topright',legend = c("IGME NMR lower","IGME NMR median", "IGME NMR upper"),
          col=c('black','blue','green','red'),
          lty=c(1,1,1))
   dev.off()
@@ -146,11 +146,15 @@ cm_comparison_graphs <- function(con, igme) {
     
     df_u5mr <- data.frame(years, unwpp_u5mr_data_i, cm_u5mr_lower_data_i, cm_u5mr_med_data_i, cm_u5mr_upper_data_i)
     df_imr  <- data.frame(years, unwpp_imr_data_i,  cm_imr_lower_data_i,  cm_imr_med_data_i,  cm_imr_upper_data_i)    
+    df_nmr  <- data.frame(years, cm_nmr_lower_data_i,  cm_nmr_med_data_i,  cm_nmr_upper_data_i)    
     colnames(df_u5mr) <- c("Year", "UNWPP","IGME lower","IGME median","IGME upper")
     colnames(df_imr) <- colnames(df_u5mr)
+    colnames(df_nmr) <- c("Year","IGME lower","IGME median","IGME upper")
     
     max_y <- max(c(df_u5mr$UNWPP,df_u5mr$"IGME lower",df_u5mr$"IGME median", df_u5mr$"IGME upper",
-                   df_imr$UNWPP,df_imr$"IGME lower",df_imr$"IGME median", df_imr$"IGME upper"), na.rm=TRUE)
+                   df_imr$UNWPP,df_imr$"IGME lower",df_imr$"IGME median", df_imr$"IGME upper",
+                   df_imr$UNWPP,df_nmr$"IGME lower",df_nmr$"IGME median", df_nmr$"IGME upper"
+                   ), na.rm=TRUE)
 
     plot_u5mr_imr(filename=paste("graphs/",country_codes[i],"_u5mr.png", sep = ""), 
                 max_y = max_y,
@@ -168,7 +172,7 @@ cm_comparison_graphs <- function(con, igme) {
     
     plot_nmr(filename=paste("graphs/",country_codes[i],"_nmr.png", sep = ""), 
                   max_y = max_y,
-                  df = df_imr, 
+                  df = df_nmr, 
                   toptitle = paste("NMR for",country_names[i]),
                   ylab = "Neonatal (28-day) mortality rate per live birth",
                   est = est_nmr_data_i)
