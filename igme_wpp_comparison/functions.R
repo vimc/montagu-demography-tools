@@ -9,7 +9,7 @@ add_expand <- function(data, country) {
   country_data$value[match(1950:2100, country_data$year)]
 }
 
-plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2100) {
+plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2100, est) {
   png(file = filename, width=800, height=600)
   
   plot(x = year1:year2, y = df$UNWPP, type="l", col="black", ylim=c(0,max_y), xaxt="n",
@@ -19,9 +19,28 @@ plot_u5mr_imr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2
   lines(x = year1:year2, y = df$"IGME lower", type = "l", col = "blue")
   lines(x = year1:year2, y = df$"IGME median", type = "l", col = "green")
   lines(x = year1:year2, y = df$"IGME upper", type = "l", col = "red")
-  grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
+  grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey")
+  points(x = est$date, y=est$estimates, col="purple")
   
   legend('topright',legend = c("UNWPP","IGME lower","IGME median","IGME upper"), 
+         col=c('black','blue','green','red'),
+         lty=c(1,1,1))
+  dev.off()
+}
+
+plot_nmr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2020, est) {
+  png(file = filename, width=800, height=600)
+  
+  plot(x = year1:year2, y = df$"IGME lower"[1:71], type="l", col="blue", ylim=c(0,max_y), xaxt="n",
+       xlab = "Year", ylab = ylab, main=toptitle)
+  
+  axis(side = 1,  at = seq(year1, year2, by=10))
+  lines(x = year1:year2, y = df$"IGME median"[1:71], type = "l", col = "green")
+  lines(x = year1:year2, y = df$"IGME upper"[1:71], type = "l", col = "red")
+  grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
+  points(x = est$date, y=est$estimates, col="purple")
+  
+  legend('bottomright',legend = c("IGME NMR lower","IGME NMR median", "IGME NMR upper"),
          col=c('black','blue','green','red'),
          lty=c(1,1,1))
   dev.off()
@@ -57,7 +76,13 @@ get_cm_data <- function(con, type, variant) {
 }
 
 
-cm_comparison_graphs <- function(con) {
+cm_comparison_graphs <- function(con, igme) {
+  
+  # Get IGME estimates
+  
+  est_nmr <- read_sheet(igme, sheet="Total NMR, Log.Ratio.NMR.U5MR", est_col="NMR")
+  est_imr <- read_sheet(igme, sheet="Total IMR")
+  est_u5mr <- read_sheet(igme, sheet="Total U5MR")
   
   # Get ids for the demographic_statics_types
   
@@ -103,7 +128,10 @@ cm_comparison_graphs <- function(con) {
   years <- 1950:2100
   
   for (i in 1:length(country_codes)) {
-  
+    est_u5mr_data_i      <- est_u5mr[est_u5mr$country == country_codes[i], ]
+    est_imr_data_i       <- est_imr[est_imr$country == country_codes[i], ]
+    est_nmr_data_i       <- est_nmr[est_nmr$country == country_codes[i], ]    
+      
     unwpp_u5mr_data_i    <- add_expand(unwpp_u5mr_data, country_codes[i])
     cm_u5mr_lower_data_i <- add_expand(cm_u5mr_lower_data, country_codes[i])
     cm_u5mr_med_data_i   <- add_expand(cm_u5mr_med_data, country_codes[i])
@@ -128,13 +156,22 @@ cm_comparison_graphs <- function(con) {
                 max_y = max_y,
                 df = df_u5mr, 
                 toptitle = paste("U5MR for",country_names[i]),
-                ylab = "Under 5 mortality rate per live birth")
+                ylab = "Under 5 mortality rate per live birth",
+                est = est_u5mr_data_i)
     
     plot_u5mr_imr(filename=paste("graphs/",country_codes[i],"_imr.png", sep = ""), 
                 max_y = max_y,
                 df = df_imr, 
                 toptitle = paste("IMR for",country_names[i]),
-                ylab = "Under 1 mortality rate per live birth")
+                ylab = "Under 1 mortality rate per live birth",
+                est = est_imr_data_i)
+    
+    plot_nmr(filename=paste("graphs/",country_codes[i],"_nmr.png", sep = ""), 
+                  max_y = max_y,
+                  df = df_imr, 
+                  toptitle = paste("NMR for",country_names[i]),
+                  ylab = "Neonatal (28-day) mortality rate per live birth",
+                  est = est_nmr_data_i)
     
     # Neonatal as a proportion of IMR.
     
@@ -152,7 +189,7 @@ cm_comparison_graphs <- function(con) {
     max_y <- max(c(igme_unwpp,igme_igme_lower,igme_igme_med,igme_igme_upper), na.rm=TRUE)
     colnames(df_nmr) <- c("Year", "UNWPP","IGME lower","IGME median","IGME upper")
     
-    plot_nmr_frac(filename = paste("graphs/",country_codes[i],"_nmr.png",sep=""),
+    plot_nmr_frac(filename = paste("graphs/",country_codes[i],"_nmrfrac.png",sep=""),
                 max_y = max_y,
                 df = df_nmr, 
                 toptitle = paste("NMR/IMR for",country_names[i]),
@@ -181,4 +218,28 @@ cm_comparison_graphs <- function(con) {
     dev.off()
   }      
   
+}
+
+read_cm_datapoints <- function(file, sheet) {
+  xl <- read_excel(file, sheet = sheet, skip = )
+  
+}
+
+read_sheet <- function(xlfile, sheet, skip, est_col="Estimates") {
+    message(sprintf("Reading %s:%s", xlfile, sheet))
+    xl<-read_excel(xlfile, sheet = sheet, skip = 2, col_names = TRUE, na = c("", "?"))
+    df = data.frame(country = xl$"Country.Code",
+                    estimates = xl[[est_col]]/1000,
+                    date = xl$Reference.Date,
+                    series = xl$Series.Name,
+                    stringsAsFactors = FALSE)
+    df
+}
+
+read_excel <- function(...) {
+  oo <- options(warnPartialMatchArgs = FALSE)
+  if (!is.null(oo$warnPartialMatchArgs)) {
+    on.exit(options(oo))
+  }
+  readxl::read_excel(...)
 }

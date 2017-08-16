@@ -9,5 +9,7 @@ con <- DBI::dbConnect(RPostgres::Postgres(),
                       password = "changeme",
                       user = "vimc")
 
-cm_comparison_graphs(con)
+igme <- "E:/Data/Demography/ChildMortality2015/UN IGME Total U5MR, IMR and NMR Database 2015.xlsx"
+
+cm_comparison_graphs(con, igme)
 
