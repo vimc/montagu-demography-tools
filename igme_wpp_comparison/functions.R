@@ -46,6 +46,26 @@ plot_nmr <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2020
   dev.off()
 }
 
+plot_nmr_extrap <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2099, est) {
+  png(file = filename, width=800, height=600)
+  
+  plot(x = year1:year2, y = df$"IGME lower"[1:length(year1:year2)], type="l", col="blue", ylim=c(0,max_y), xaxt="n",
+       xlab = "Year", ylab = ylab, main=toptitle)
+  
+  axis(side = 1,  at = seq(year1, year2, by=10))
+  lines(x = year1:year2, y = df$"IGME median"[1:length(year1:year2)], type = "l", col = "green")
+  lines(x = year1:year2, y = df$"IGME upper"[1:length(year1:year2)], type = "l", col = "red")
+  lines(x = year1:year2, y = df$"IGME Extrapolated"[1:length(year1:year2)], type = "l", col = "brown")  
+  grid(nx = NULL,ny = NULL, 5, lwd = 1, col="grey") 
+  points(x = est$date, y=est$estimates, col="purple")
+  
+  legend('topright',legend = c("IGME NMR lower","IGME NMR median", "IGME NMR upper", "Extrapolated"),
+         col=c('blue','green','red', 'brown'),
+         lty=c(1,1,1))
+  dev.off()
+}
+
+
 plot_nmr_frac <- function(filename, max_y, df, toptitle, ylab, year1=1950, year2=2020) {
   png(file = filename, width=800, height=600)
   
@@ -102,6 +122,7 @@ cm_comparison_graphs <- function(con, igme) {
   cm_median       <- variants$id[variants$code == 'cm_median']
   cm_lower        <- variants$id[variants$code == 'cm_lower']
   cm_upper        <- variants$id[variants$code == 'cm_upper']
+  cm_extrap       <- variants$id[variants$code == 'wpp_cm_extrapolation']  
   
   # Get data
   
@@ -116,6 +137,7 @@ cm_comparison_graphs <- function(con, igme) {
   cm_nmr_med_data    <- get_cm_data(con, cm_nmr_id, cm_median)
   cm_nmr_upper_data  <- get_cm_data(con, cm_nmr_id, cm_upper)
   cm_nmr_lower_data  <- get_cm_data(con, cm_nmr_id, cm_lower)
+  cm_nmr_extrap_data <- get_cm_data(con, cm_nmr_id, cm_extrap)
   
   # Get country superset
   
@@ -143,6 +165,7 @@ cm_comparison_graphs <- function(con, igme) {
     cm_nmr_lower_data_i  <- add_expand(cm_nmr_lower_data, country_codes[i])
     cm_nmr_med_data_i    <- add_expand(cm_nmr_med_data, country_codes[i])
     cm_nmr_upper_data_i  <- add_expand(cm_nmr_upper_data, country_codes[i])
+    cm_nmr_extrap_i      <- add_expand(cm_nmr_extrap_data, country_codes[i])
     
     df_u5mr <- data.frame(years, unwpp_u5mr_data_i, cm_u5mr_lower_data_i, cm_u5mr_med_data_i, cm_u5mr_upper_data_i)
     df_imr  <- data.frame(years, unwpp_imr_data_i,  cm_imr_lower_data_i,  cm_imr_med_data_i,  cm_imr_upper_data_i)    
@@ -176,6 +199,23 @@ cm_comparison_graphs <- function(con, igme) {
                   toptitle = paste("NMR for",country_names[i]),
                   ylab = "Neonatal (28-day) mortality rate per live birth",
                   est = est_nmr_data_i)
+
+    
+    df_extrap <- data.frame(years, cm_nmr_lower_data_i,  cm_nmr_med_data_i,  cm_nmr_upper_data_i, 
+                            cm_nmr_extrap_i)    
+    colnames(df_extrap) <- c("Year","IGME lower","IGME median","IGME upper", "IGME Extrapolated")
+    max_y <- max(c(df_u5mr$UNWPP,df_u5mr$"IGME lower",df_u5mr$"IGME median", df_u5mr$"IGME upper",
+                   df_imr$UNWPP,df_imr$"IGME lower",df_imr$"IGME median", df_imr$"IGME upper",
+                   df_imr$UNWPP,df_nmr$"IGME lower",df_nmr$"IGME median", df_nmr$"IGME upper",
+                   df_extrap$"IGME Extrapolated"), na.rm=TRUE)
+    
+    
+    plot_nmr_extrap(filename=paste("graphs/",country_codes[i],"_nmr_extrap.png", sep = ""), 
+             max_y = max_y,
+             df = df_extrap, 
+             toptitle = paste("NMR with extrapolation for",country_names[i]),
+             ylab = "Neonatal (28-day) mortality rate per live birth",
+             est = est_nmr_data_i)
     
     # Neonatal as a proportion of IMR.
     
@@ -199,7 +239,10 @@ cm_comparison_graphs <- function(con, igme) {
                 toptitle = paste("NMR/IMR for",country_names[i]),
                 ylab = "28 day mortality as fraction of 1 year mortality")
     
-    # Neonatal as a proportion of IMR - plotted against IMR
+    
+   
+    
+       # Neonatal as a proportion of IMR - plotted against IMR
     
     short_cmimr_med   <- cm_imr_med_data_i[1:71]
     short_cmimr_lower <- cm_imr_lower_data_i[1:71]
